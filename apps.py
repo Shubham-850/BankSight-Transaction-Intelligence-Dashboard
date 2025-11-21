@@ -1,9 +1,3 @@
-# streamlit_bank_dashboard.py
-# Beginner-friendly Streamlit app to explore bank datasets and perform CRUD + simulations
-# This file runs in two modes:
-# 1) Streamlit mode (if `streamlit` is installed) — full interactive UI
-# 2) Fallback CLI/diagnostic mode (if `streamlit` is NOT installed) — prints summaries and runs basic checks
-
 import os
 import sys
 import pandas as pd
