@@ -5,8 +5,7 @@ import sqlite3
 from sqlite3 import Connection
 from pathlib import Path
 import datetime
-
-# Put DB next to this script by default (portable) — avoids hardcoding user paths
+# ---------------------- Database Setup ----------------------
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = str(BASE_DIR / "bankdata.db")
 CSV_PATHS = {
@@ -25,74 +24,6 @@ try:
 except Exception:
     USE_STREAMLIT = False
 
-    # Minimal CLI shim for non-Streamlit environments
-    class _CLIShim:
-        def __init__(self):
-            self.sidebar = self
-
-        def set_page_config(self, **kwargs):
-            return None
-
-        def title(self, txt):
-            print(f"== {txt} ==")
-
-        def header(self, txt):
-            print(f"-- {txt} --")
-
-        def markdown(self, txt):
-            print(txt)
-
-        def write(self, *args, **kwargs):
-            print(*args)
-
-        def code(self, txt):
-            print("[SQL]", txt)
-
-        def dataframe(self, df):
-            if hasattr(df, "head"):
-                print(df.head().to_string())
-            else:
-                print(df)
-
-        def image(self, *args, **kwargs):
-            print("[image]")
-
-        # sidebar helpers
-        def selectbox(self, label, options, index=0):
-            print(f"{label}: (auto-selecting {options[index]})")
-            return options[index]
-
-        def number_input(self, *args, **kwargs):
-            return kwargs.get('value', 0)
-
-        def multiselect(self, *args, **kwargs):
-            return kwargs.get('default', [])
-
-        def text_input(self, *args, **kwargs):
-            return kwargs.get('value', '')
-
-        def button(self, label):
-            print(f"[button] {label} (CLI mode — ignored)")
-            return False
-
-        def radio(self, *args, **kwargs):
-            opts = args[1] if len(args) > 1 else kwargs.get('options', [])
-            return opts[0] if opts else None
-
-        def select_slider(self, *args, **kwargs):
-            return None
-
-        def expander(self, label, expanded=False):
-            class _Ctx:
-                def __enter__(self):
-                    return None
-
-                def __exit__(self, exc_type, exc, tb):
-                    return False
-
-            return _Ctx()
-
-    st = _CLIShim()
 
 # Connection cache
 _CONN: sqlite3.Connection | None = None
@@ -539,43 +470,3 @@ if USE_STREAMLIT:
         st.markdown("**Contact:** shubhamrathore850@gmail.com")
         # Do not attempt to render a CSV as image; placeholder only
         st.write("Project files are in /mnt/data/")
-
-else:
-    # CLI fallback: run diagnostics and a few example queries so user can test without Streamlit installed
-    print("Streamlit not available — running CLI diagnostic mode.")
-    print("Database path:", DB_PATH)
-    print("Available CSVs:")
-    for k, p in CSV_PATHS.items():
-        print(f" - {k}: {p} -> {('exists' if os.path.exists(p) else 'MISSING')}")
-
-    tables = list_tables()
-    print("Loaded tables:", tables)
-
-    # Show top rows of each table
-    for t in tables:
-        print(f"=== {t} (top 5 rows) ===")
-        try:
-            df = read_table(t, limit=5)
-            print(df.to_string(index=False))
-        except Exception as e:
-            print("Could not read table:", e)
-
-    # Run a few smoke-test queries and print results
-    sample_queries = {
-        "Total transactions": "SELECT COUNT(*) AS cnt FROM transactions;",
-        "Total customers": "SELECT COUNT(*) AS cnt FROM customers;",
-        "Top 5 transactions by amount": "SELECT txn_id, customer_id, amount FROM transactions ORDER BY amount DESC LIMIT 5;",
-        "Accounts avg balance": "SELECT ROUND(AVG(account_balance),2) AS avg_bal FROM accounts;",
-    }
-
-    for name, q in sample_queries.items():
-        print(f">> {name}:SQL: {q}")
-        try:
-            df = run_sql(q)
-            print(df.to_string(index=False))
-        except Exception as e:
-            print("Query failed:", e)
-
-    print("CLI diagnostic complete. If you want the full Streamlit UI, install streamlit: pip install streamlit and run: streamlit run streamlit_bank_dashboard.py")
-
-# If executed as a script in a non-Streamlit environment, this file will run diagnostics above.
